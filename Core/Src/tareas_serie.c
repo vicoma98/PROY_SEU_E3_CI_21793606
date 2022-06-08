@@ -25,7 +25,8 @@ extern UART_HandleTypeDef huart1;
 //extern int ledsEncendidos[8];//display del estado de leds en funcion si deben estar encndidos o apagados
 static const uint16_t ledPIN[]={GPIO_PIN_5,GPIO_PIN_0,GPIO_PIN_6,GPIO_PIN_3,GPIO_PIN_5,GPIO_PIN_8,GPIO_PIN_10,GPIO_PIN_4};
 static const GPIO_TypeDef * ledGPIO[]={GPIOA,GPIOB,GPIOA,GPIOB,GPIOB,GPIOA,GPIOB,GPIOB};
-
+//sfloat temperatura,valorReal,tempMax,tempMin,luzMax,luzMin,luzSalto,tempSalto;
+//char estado;
 
 char post_temp[]="POST /v1/queryContext HTTP/1.1\r\n"
 		"Content-Type: application/json\r\n"
@@ -81,12 +82,12 @@ char body_update_todo []="{"
 						"{"
 							"\"name\": \"IntesnidadLuz\","
 							"\"type\": \"floatArray\","
-							"\"value\": \"%f,%f,%f,%f\""
+							"\"value\": [\"%f\",\"%f\",\"%f\",\"%f\"]"
 						"},"
 						"{"
 							"\"name\": \"Temperatura\","
 							"\"type\": \"floatArray\","
-							"\"value\": \"%f,%f,%f,%f\""
+							"\"value\": [\"%f\",\"%f\",\"%f\",\"%f\"]"
 						"},"
 						"{"
 							"\"name\": \"Alarma\","
@@ -225,7 +226,73 @@ void postfunc(char * nombreMaquina,char * ssid, char * passwd, char * puerto){
 
 
 
+}
+void conexion(char * nombreMaquina,char * ssid, char * passwd, char * puerto){
+	uint32_t res;
+	char cad[]="AT+CWJAP=\"%s\",\"%s\"\r\n";
+	char cad1[]="AT+CWMODE=1\r\n";
+	char cad2[]="AT+CIFSR\r\n";
+	char cad3[]="AT+CIPSTART=\"TCP\",\"%s\",%s\r\n";
+	sprintf(candenafinal,cad3,nombreMaquina,puerto);
+	int r = funcion_conf(cad1,strlen(cad1),2000,1);
+	sprintf(candenafinal,cad,ssid,passwd);
+	int r2 = funcion_conf(candenafinal,strlen(candenafinal),2000,1);
+	int r3 = funcion_conf(cad2,strlen(cad2),2000,1);
+	sprintf(candenafinal,cad3,nombreMaquina,puerto);
+	int r4 = funcion_conf(candenafinal,strlen(candenafinal),500,1000);
+}
+void json_querryTotal(void){
+	//tratado del json
+	char *jsonp = strstr(buffer_DMA,"{");
+	jsonp[strlen(jsonp)-2] = '\0';
+	cJSON * contextResponses = cJSON_Parse(jsonp);
+	cJSON * contextEl = cJSON_GetObjectItemCaseSensitive(contextResponses,"contextResponses");
+	int atributos = cJSON_GetArraySize(contextEl);
+	for (int i=0;i<atributos;i++){
+		cJSON * array1 = cJSON_GetArrayItem(contextEl,i);
+		cJSON * name = cJSON_GetObjectItemCaseSensitive(contextEl, "contextElement");
+		if (cJSON_IsString(name) && (name->valuestring != NULL))
+		    {
+		        printf("checking \"%s\"\n", name->valuestring);
+		        cJSON * array1 = name;
+		    }
+	}
 
+	atributos = cJSON_GetArraySize(array1);
+	for (int i=0;i<atributos;i++){
+			cJSON * array1 = cJSON_GetArrayItem(contextEl,i);
+			cJSON * name = cJSON_GetObjectItemCaseSensitive(contextEl, "attributes");
+			if (cJSON_IsString(name) && (name->valuestring != NULL))
+			    {
+			        printf("checking \"%s\"\n", name->valuestring);
+			        cJSON * atributes = name;
+			    }
+		}
+	cJSON * array1 = cJSON_GetObjectItemCaseSensitive(contextEl, "contextElement");
+	//cJSON * array1 = cJSON_GetArrayItem(contextEl,0);
+	//cJSON * contextElement = cJSON_GetObjectItemCaseSensitive(array1,"contextElement");
+	cJSON * atributes = cJSON_GetObjectItemCaseSensitive(array1,"attributes");
+
+
+	cJSON * atributo =  cJSON_GetObjectItemCaseSensitive(atributes, "Alarma");
+	cJSON * values = cJSON_GetObjectItemCaseSensitive(atributo,"value");
+	char* leds= values->valuestring;
+	printf(leds);
+}
+void conectado(void){
+	//***post***
+	char cad4[]="AT+CIPSEND=%d\r\n";
+	sprintf(cadenafinalv2,body_update_todo,valorReal,luzMax,luzMin,luzSalto,temperatura,tempMax,tempMin,tempSalto,"true");
+	sprintf(candenafinal,post_temp_apli,strlen(cadenafinalv2),cadenafinalv2);
+	sprintf(cadenafinalv2,cad4,strlen(candenafinal));
+	int r5 = funcion_conf(cadenafinalv2,strlen(cadenafinalv2),500,20);//send=de bytes
+	int r6 = funcion_conf(candenafinal,strlen(candenafinal),500,20);//json peticion
+
+	sprintf(candenafinal,post_temp,strlen(body),&body);
+	sprintf(cadenafinalv2,cad4,strlen(candenafinal));
+	int r7 = funcion_conf(cadenafinalv2,strlen(cadenafinalv2),1000,2000);
+	int r8 = funcion_conf(candenafinal,strlen(candenafinal),1000,2000);
+	json_querryTotal();
 }
 
 
@@ -239,17 +306,21 @@ void Task_Send( void *pvParameters ){
 	//boot_wifi("OPPOReno2","ilovematy");
 	//entregable("worldclockapi.com","OPPOReno2","ilovematy","80");
 	//postfunc("pperez-seu-or.disca.upv.es","routerSEU","00000000","10000");
-
+	ldrReadAndmodify();
+	ntcReadAndmodify();
+	lecturaPonteciometroSetAlarma();
 	//postfunc("pperez2.disca.upv.es","OPPOReno2","ilovematy","10000");/*
-	while(1){
-		//ModoTestBasico();
-		programaPrincipal();
-		/*it++;
+	conexion("pperez2.disca.upv.es","OPPOReno2","ilovematy","10000");
+	conectado();
+	/*while(1){
+		ModoTestBasico();
+		//programaPrincipal();
+		it++;
 		sprintf(cad,"IT %d\r\n",(int)it);
 		res=buff->puts(buff,(BUFF_ITEM_t *)cad,strlen(cad));
-		vTaskDelay(10000/portTICK_RATE_MS );*/
+		vTaskDelay(10000/portTICK_RATE_MS );
 
-	}//*/
+	}*/
 }
 
 void Task_Receive( void *pvParameters ){

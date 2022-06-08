@@ -1,6 +1,0 @@
-../Core/Src/tareas_serie.c:108:6:serie_Init_FreeRTOS	24	static
-../Core/Src/tareas_serie.c:151:5:funcion_conf	40	static
-../Core/Src/tareas_serie.c:167:6:json_querry	48	static
-../Core/Src/tareas_serie.c:188:6:postfunc	160	static
-../Core/Src/tareas_serie.c:232:6:Task_Send	120	static
-../Core/Src/tareas_serie.c:255:6:Task_Receive	168	static

@@ -13,15 +13,16 @@ int valor_anterior = 1;
 int blinker_value = 1;
 int llamadas = 0; // indicador de la cantidad de llamadas para parpadear
 int reset_Buzzer=100000;//indicador de las iteraciones del programa de reseteo
-int zumbar = 0; // indica si estapitando
+int zumbar = 0; // indica si esta pitando
 int ledsEncendidos[8]={0,0,0,0,0,0,0,0};//display del estado de leds en funcion si deben estar encndidos o apagados
 int led_level_buzzer;//ultimo led que debe estar parpadeando y el que marca la explosion
 int ultimo_led; // ultimo led encendido fijo
 extern ADC_HandleTypeDef hadc1;
 ADC_ChannelConfTypeDef sConfig = {0};
 extern UART_HandleTypeDef huart2;
-float temperatura,valorReal;
-
+float temperatura,valorReal,tempMax,tempMin,luzMax,luzMin,luzSalto,tempSalto;
+char estado;
+float valor;//valor del potenciometro
 //lista de leds
 static const uint16_t ledPIN[]={GPIO_PIN_5,GPIO_PIN_0,GPIO_PIN_6,GPIO_PIN_3,GPIO_PIN_5,GPIO_PIN_8,GPIO_PIN_10,GPIO_PIN_4};
 static const GPIO_TypeDef * ledGPIO[]={GPIOA,GPIOB,GPIOA,GPIOB,GPIOB,GPIOA,GPIOB,GPIOB};
@@ -69,15 +70,6 @@ void encender_leds(void){
 	}
 }
 
-void setDisplay(int ultimo_led){
-	for(int i = 0 ;i<8;i++){
-			if ( ultimo_led>=i){
-				ledsEncendidos[i]= 1;
-			}else{
-				ledsEncendidos[i]= 0;
-			}
-		}
-}
 void lecturaPonteciometroSetAlarma(void){
 
 	sConfig.Channel = ADC_CHANNEL_4;
@@ -89,7 +81,9 @@ void lecturaPonteciometroSetAlarma(void){
 	}
 	HAL_ADC_Start(&hadc1);
 	HAL_ADC_PollForConversion(&hadc1,10000);
-	float valor=HAL_ADC_GetValue(&hadc1);
+	valor=HAL_ADC_GetValue(&hadc1);
+	luzSalto = (valor/(float)4100)*100;
+	tempSalto = 25 + (valor/(float)4100)*5;
 	HAL_ADC_Stop(&hadc1);
 
 		if(valor>20){
@@ -126,6 +120,13 @@ void ldrReadAndmodify(void){
 	float stepLDR=12.5;
 	ultimo_led=valorReal/stepLDR;//division para calcular el ultimo led encedido
 
+	if (valorReal>luzMax){
+		luzMax = valorReal;
+	}
+	if (valorReal<luzMin){
+		luzMin = valorReal;
+	}
+
 	for(int i = 0 ;i<8;i++){
 			if ( ultimo_led>=i){
 				ledsEncendidos[i]= 1;
@@ -133,7 +134,7 @@ void ldrReadAndmodify(void){
 				ledsEncendidos[i]= 0;
 			}
 		}
-	//encender_leds();
+
 }
 void ntcReadAndmodify(void){
 	sConfig.Channel = ADC_CHANNEL_1;
@@ -145,13 +146,19 @@ void ntcReadAndmodify(void){
 	}
 	HAL_ADC_Start(&hadc1);
 	HAL_ADC_PollForConversion(&hadc1,10000);
-	float B = 3950.f;
 	float c = HAL_ADC_GetValue(&hadc1);
 	float finalVal = c/(float)0xFFF * 3.3f;
 	float resistencia = (3.3f * NTC_RDIV) / (3.3f - finalVal) - NTC_RDIV;
 	temperatura = (NTC_B / (logf(resistencia / NTC_RDIV )+ NTC_B/NTC_T25)) - 273.f;
 	float stepNTC=0.625;
 	ultimo_led=(temperatura-25)/stepNTC;//division para calcular el ultimo led encedido
+	if(tempMax<temperatura){
+		tempMax=temperatura;
+	}
+	if(tempMin>temperatura){
+		tempMin=temperatura;
+	}
+
 	for(int i = 0 ;i<8;i++){
 		if ( ultimo_led>=i){
 			ledsEncendidos[i]= 1;
@@ -159,7 +166,6 @@ void ntcReadAndmodify(void){
 			ledsEncendidos[i]= 0;
 		}
 	}
-	//encender_leds();
 
 
 }
@@ -167,7 +173,7 @@ void buzzerStart(void){
 	if(ultimo_led>=led_level_buzzer&&reset_Buzzer>100000){
 		zumbar=1;
 		HAL_GPIO_WritePin(Buzzer_GPIO_Port,Buzzer_Pin, 1);
-
+		estado = "T";
 	}else{
 		reset_Buzzer++;
 	}
@@ -179,6 +185,7 @@ void buzzerStop(void){
 		botonD=1;
 		reset_Buzzer=0;
 		zumbar=0;
+		estado = "F";
 	}
 }
 void programaPrincipal(void){
@@ -197,14 +204,6 @@ void programaPrincipal(void){
 			ntc=0;
 		}
 	}
-	/*if( botonI==0){
-		if(ntc==1 && botonI==0){
-			ntc=0;
-
-		}else{
-			ntc=1;
-		}
-	}*/
 	//enceder la lectura de los sensores
 	if(ntc==0){
 		ldrReadAndmodify();
@@ -220,7 +219,9 @@ void ModoTestBasico(void){
 	botonI = HAL_GPIO_ReadPin(Pulsador2_GPIO_Port,Pulsador2_Pin);
 	ldrReadAndmodify();
 	ntcReadAndmodify();
+	lecturaPonteciometroSetAlarma();
 	printf("la lectura del boton derecho es %d la lectura del boton izquierdo es %d y la temperaruta es %00.f y el sensor lumnico de %00.f \r\n",botonD,botonI,temperatura,valorReal);
+	printf("tempMax %f tempMin %f tempSalto %f luzMax %f luzMin %f luzSalto %f \r\n",tempMax,tempMin,tempSalto,luzMax,luzMin,luzSalto);
 	printf("\033[H");
 	barridoLeds();
 }
