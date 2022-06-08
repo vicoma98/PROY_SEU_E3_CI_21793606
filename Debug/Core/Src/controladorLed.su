@@ -1,0 +1,10 @@
+../Core/Src/controladorLed.c:29:6:barridoLeds	32	static
+../Core/Src/controladorLed.c:47:6:encender_leds	16	static
+../Core/Src/controladorLed.c:72:6:setDisplay	24	static
+../Core/Src/controladorLed.c:81:6:lecturaPonteciometroSetAlarma	16	static
+../Core/Src/controladorLed.c:112:6:ldrReadAndmodify	24	static
+../Core/Src/controladorLed.c:138:6:ntcReadAndmodify	40	static
+../Core/Src/controladorLed.c:166:6:buzzerStart	8	static
+../Core/Src/controladorLed.c:176:6:buzzerStop	8	static
+../Core/Src/controladorLed.c:184:6:programaPrincipal	32	static
+../Core/Src/controladorLed.c:218:6:ModoTestBasico	48	static
