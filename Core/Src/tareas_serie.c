@@ -85,12 +85,12 @@ char body_update_todo []="{"
 						"{"
 							"\"name\": \"IntesnidadLuz\","
 							"\"type\": \"floatArray\","
-							"\"value\": [\"%f\",\"%f\",\"%f\",\"%f\"]"
+							"\"value\": \"%f,%f,%f,%f\""
 						"},"
 						"{"
 							"\"name\": \"Temperatura\","
 							"\"type\": \"floatArray\","
-							"\"value\": [\"%f\",\"%f\",\"%f\",\"%f\"]"
+							"\"value\": \"%f,%f,%f,%f\""
 						"},"
 						"{"
 							"\"name\": \"Alarma\","
@@ -257,23 +257,26 @@ void json_querryTotal(void){
 	cJSON * atributes = cJSON_GetObjectItemCaseSensitive(array1,"attributes");
 	int sizeofar = cJSON_GetArraySize(atributes);
 	for (int i = 0; i < sizeofar; i++){
-		cJSON * atr = cJSON_GetArrayItem(contextEl,i);
-		//cJSON *name = cJSON_GetObjectItemCaseSensitive(atr, "name");
-		//cJSON *type = cJSON_GetObjectItemCaseSensitive(atr, "type");
-		cJSON *value = cJSON_GetObjectItemCaseSensitive(atr, "value");
-		//char* name2= name->valuestring;
-		//char* type2= type->valuestring;
-		char* temp= value->valuestring;
-		printf("*********");
-		printf(temp);
-		printf("*********");
+		cJSON * atr = cJSON_GetArrayItem(atributes,i);
+		char*name = cJSON_GetStringValue(cJSON_GetObjectItem(atr, "name"));
+		char*type = cJSON_GetStringValue(cJSON_GetObjectItem(atr, "type"));
+		char pr[13]="IntesnidadLuz";
+		int itl=1;
+		for(int j = 0 ; j<13; j++){
+					if(pr[j]==name[j] && itl==1){
+						itl=1;
+					}else{
+						itl=0;
+					}
+				}
+		if(pr==name){
+			char*type = cJSON_GetStringValue(cJSON_GetObjectItem(atr, "value"));
+
+		}
+
 	}
 	//
 	//cJSON * contextElement = cJSON_GetObjectItemCaseSensitive(array1,"contextElement");
-
-
-
-
 	//char* leds= values->valuestring;
 	//printf(leds);
 }

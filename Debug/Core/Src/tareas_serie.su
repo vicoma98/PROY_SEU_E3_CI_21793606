@@ -3,7 +3,7 @@
 ../Core/Src/tareas_serie.c:171:6:json_querry	48	static
 ../Core/Src/tareas_serie.c:192:6:postfunc	160	static
 ../Core/Src/tareas_serie.c:233:6:conexion	128	static
-../Core/Src/tareas_serie.c:248:6:json_querryTotal	56	static
-../Core/Src/tareas_serie.c:280:6:conectado	160	static
-../Core/Src/tareas_serie.c:299:6:Task_Send	120	static
-../Core/Src/tareas_serie.c:326:6:Task_Receive	168	static
+../Core/Src/tareas_serie.c:248:6:json_querryTotal	88	static
+../Core/Src/tareas_serie.c:283:6:conectado	160	static
+../Core/Src/tareas_serie.c:302:6:Task_Send	120	static
+../Core/Src/tareas_serie.c:329:6:Task_Receive	168	static
